@@ -1,475 +1,829 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>My Daily Grind</title>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
-<style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-  :root {
-    --accent: #4f46e5;
-    --accent-light: #eef2ff;
-    --accent-mid: #818cf8;
-    --bg: #ffffff;
-    --bg2: #f9fafb;
-    --border: rgba(0,0,0,0.12);
-    --text: #111827;
-    --muted: #6b7280;
-    --radius: 12px;
-  }
-
-  @media (prefers-color-scheme: dark) {
-    :root {
-      --bg: #1a1a2e;
-      --bg2: #16213e;
-      --border: rgba(255,255,255,0.12);
-      --text: #f1f5f9;
-      --muted: #94a3b8;
-      --accent-light: #1e1b4b;
-    }
-  }
-
-  body {
-    font-family: 'Syne', sans-serif;
-    color: var(--text);
-    background: var(--bg2);
-    min-height: 100vh;
-  }
-
-  .app { max-width: 1100px; margin: 0 auto; padding: 0 0 3rem; }
-
-  .header {
-    padding: 1.75rem 1.5rem 0;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 1rem;
-  }
-
-  .header h1 { font-size: 26px; font-weight: 800; letter-spacing: -0.5px; }
-  .header h1 span { color: var(--accent); }
-
-  .streak-badge {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    background: var(--accent-light);
-    color: var(--accent);
-    padding: 7px 16px;
-    border-radius: 100px;
-    font-size: 13px;
-    font-weight: 600;
-    border: 0.5px solid var(--accent-mid);
-  }
-
-  .calendar-strip {
-    display: flex;
-    gap: 8px;
-    padding: 1.25rem 1.5rem;
-    overflow-x: auto;
-    scrollbar-width: none;
-  }
-  .calendar-strip::-webkit-scrollbar { display: none; }
-
-  .day-pill {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 4px;
-    padding: 10px 14px;
-    border-radius: 12px;
-    cursor: pointer;
-    border: 0.5px solid var(--border);
-    background: var(--bg);
-    min-width: 60px;
-    transition: all 0.15s;
-  }
-  .day-pill:hover { border-color: var(--accent-mid); }
-  .day-pill.active { background: var(--accent); border-color: var(--accent); color: white; }
-  .day-pill .day-name { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; opacity: 0.7; }
-  .day-pill.active .day-name { opacity: 1; }
-  .day-pill .day-num { font-size: 18px; font-weight: 800; }
-  .day-pill .progress-dots { display: flex; gap: 3px; margin-top: 2px; }
-  .dot { width: 5px; height: 5px; border-radius: 50%; background: var(--border); }
-  .dot.done { background: #4ade80; }
-  .day-pill.active .dot { background: rgba(255,255,255,0.3); }
-  .day-pill.active .dot.done { background: rgba(255,255,255,0.95); }
-
-  .today-label {
-    font-size: 12px;
-    font-weight: 700;
-    color: var(--muted);
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    padding: 0 1.5rem;
-    margin-bottom: 0.75rem;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  }
-
-  .reset-btn {
-    font-size: 11px;
-    font-weight: 600;
-    color: var(--accent);
-    cursor: pointer;
-    background: none;
-    border: 0.5px solid var(--accent-mid);
-    border-radius: 100px;
-    padding: 4px 12px;
-    font-family: inherit;
-    transition: background 0.15s;
-  }
-  .reset-btn:hover { background: var(--accent-light); }
-
-  .main {
-    padding: 0 1.5rem 2rem;
-    display: grid;
-    grid-template-columns: 1fr 300px;
-    gap: 1.5rem;
-  }
-
-  @media (max-width: 700px) {
-    .main { grid-template-columns: 1fr; }
-    .sidebar { display: none; }
-  }
-
-  .schedule-list { display: flex; flex-direction: column; gap: 10px; }
-
-  .block {
-    border: 0.5px solid var(--border);
-    border-radius: var(--radius);
-    background: var(--bg);
-    overflow: hidden;
-    transition: border-color 0.15s;
-  }
-  .block.completed { opacity: 0.7; }
-  .block.completed .block-header { background: var(--bg2); }
-
-  .block-header {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 12px 16px;
-    cursor: pointer;
-    user-select: none;
-  }
-
-  .color-bar { width: 4px; height: 36px; border-radius: 2px; flex-shrink: 0; }
-
-  .block-info { flex: 1; }
-
-  .block-title {
-    font-size: 15px;
-    font-weight: 600;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    flex-wrap: wrap;
-  }
-
-  .block-time {
-    font-size: 12px;
-    color: var(--muted);
-    margin-top: 2px;
-    font-family: 'Space Mono', monospace;
-  }
-
-  .tag {
-    font-size: 10px;
-    font-weight: 700;
-    padding: 2px 8px;
-    border-radius: 100px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-  }
-
-  .check-btn {
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    border: 0.5px solid var(--border);
-    background: var(--bg2);
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-    transition: all 0.15s;
-    color: var(--muted);
-    font-size: 16px;
-  }
-  .check-btn:hover { border-color: #4ade80; color: #16a34a; }
-  .check-btn.done { background: #dcfce7; border-color: #4ade80; color: #16a34a; }
-
-  .block-tasks {
-    border-top: 0.5px solid var(--border);
-    padding: 10px 16px 12px 48px;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-  }
-
-  .task-item {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-size: 13px;
-    cursor: pointer;
-    padding: 4px 0;
-    color: var(--text);
-    transition: color 0.15s;
-  }
-  .task-item.done-task { color: var(--muted); text-decoration: line-through; }
-
-  .task-cb {
-    width: 16px;
-    height: 16px;
-    border-radius: 4px;
-    border: 0.5px solid var(--border);
-    background: var(--bg2);
-    flex-shrink: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.15s;
-    font-size: 10px;
-    color: transparent;
-  }
-  .task-item.done-task .task-cb { background: #dcfce7; border-color: #4ade80; color: #16a34a; }
-
-  /* Sidebar */
-  .sidebar { display: flex; flex-direction: column; gap: 12px; }
-
-  .stat-card {
-    background: var(--bg);
-    border: 0.5px solid var(--border);
-    border-radius: var(--radius);
-    padding: 1rem 1.25rem;
-  }
-
-  .stat-label {
-    font-size: 12px;
-    color: var(--muted);
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    margin-bottom: 6px;
-  }
-
-  .progress-bar-outer {
-    height: 8px;
-    border-radius: 4px;
-    background: var(--border);
-    overflow: hidden;
-    margin-top: 8px;
-  }
-
-  .progress-bar-inner {
-    height: 100%;
-    border-radius: 4px;
-    background: var(--accent);
-    transition: width 0.4s ease;
-  }
-
-  .big-num { font-size: 32px; font-weight: 800; color: var(--accent); }
-
-  .legend-list { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
-  .legend-item { display: flex; align-items: center; gap: 8px; font-size: 13px; }
-  .legend-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
-
-  .motivation-card {
-    background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
-    border-radius: var(--radius);
-    padding: 1.25rem;
-    color: white;
-  }
-  .motivation-card p { font-size: 14px; line-height: 1.6; opacity: 0.9; }
-  .motivation-card strong { display: block; font-size: 16px; font-weight: 800; margin-bottom: 6px; }
-</style>
-</head>
-<body>
-<div class="app">
-  <div class="header">
-    <h1>My <span>Daily Grind</span></h1>
-    <div class="streak-badge" id="streak-badge">
-      <i class="ti ti-flame" aria-hidden="true"></i>
-      <span id="streak-text">0 day streak</span>
-    </div>
-  </div>
-
-  <div class="calendar-strip" id="calendar-strip"></div>
-
-  <div class="today-label">
-    <span id="date-label">Today's schedule</span>
-    <button class="reset-btn" onclick="resetDay()">Reset day</button>
-  </div>
-
-  <div class="main">
-    <div class="schedule-list" id="schedule-list"></div>
-    <div class="sidebar">
-      <div class="stat-card">
-        <div class="stat-label">Today's progress</div>
-        <div class="big-num" id="pct-num">0%</div>
-        <div class="progress-bar-outer">
-          <div class="progress-bar-inner" id="progress-bar" style="width:0%"></div>
-        </div>
-        <div style="font-size:12px; color:var(--muted); margin-top:6px;" id="tasks-done-label">0 of 0 blocks done</div>
-      </div>
-
-      <div class="stat-card">
-        <div class="stat-label">Core CS today</div>
-        <div style="margin-top:8px; font-size:15px; font-weight:700;" id="cs-today"></div>
-        <div style="font-size:12px; color:var(--muted); margin-top:4px;">4:00–5:00 PM slot</div>
-      </div>
-
-      <div class="stat-card">
-        <div class="stat-label">Placement block</div>
-        <div style="margin-top:8px; font-size:15px; font-weight:700;" id="placement-today"></div>
-        <div style="font-size:12px; color:var(--muted); margin-top:4px;">8:30–10:30 PM slot</div>
-      </div>
-
-      <div class="stat-card">
-        <div class="stat-label">DSA topics</div>
-        <div id="dsa-progress" class="legend-list"></div>
-      </div>
-
-      <div class="motivation-card">
-        <strong id="quote-title">Keep going!</strong>
-        <p id="quote-text">Every expert was once a beginner. Today's grind is tomorrow's interview win.</p>
-      </div>
-    </div>
-  </div>
-</div>
-
-<script>
-  const DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-  const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  const CS_ROTATION = {0:'Revision',1:'OOP',2:'DBMS',3:'OS',4:'CN',5:'OOP',6:'DBMS'};
-  const PLACEMENT_ROTATION = {0:'Day A: LeetCode + Medium',1:'Day B: Project Dev',2:'Day C: Resume & GitHub'};
-  const DSA_ORDER = ['Trees','BST','Heap','Graph','DP'];
-  const DSA_COLORS = ['#7c3aed','#8b5cf6','#a78bfa','#c4b5fd','#ddd6fe'];
-
-  const QUOTES = [
-    {title:"Lock in.",text:"No distractions. The placement season rewards those who stayed consistent."},
-    {title:"One block at a time.",text:"You don't need to do everything today. Just the next task."},
-    {title:"Cricket → Code → Conquer.",text:"Balance is the key. You've got a solid plan — execute it."},
-    {title:"DSA is a skill.",text:"Solve one problem at a time. Consistency beats intensity."},
-    {title:"You're building something.",text:"Each day's work compounds. Keep showing up."},
-  ];
-
-  const COLORS = {
-    cricket:'#059669', dsa:'#7c3aed', aiml:'#0891b2',
-    corecs:'#d97706', placement:'#dc2626', break:'#9ca3af', games:'#16a34a'
-  };
-
-  function getSchedule(dayOfWeek, dayIndex) {
-    const cs = CS_ROTATION[dayOfWeek];
-    const placementType = PLACEMENT_ROTATION[dayIndex % 3];
-    return [
-      {id:'cricket',color:COLORS.cricket,tag:'Sport',tagColor:'#d1fae5',tagText:'#065f46',
-       title:'Cricket Practice',time:'6:00 AM – 9:30 AM',
-       tasks:['Batting drills','Fielding practice','Team play','Cool down & stretch']},
-      {id:'break1',color:COLORS.break,tag:'Break',tagColor:'#f3f4f6',tagText:'#374151',
-       title:'Breakfast + Bath + Rest',time:'9:30 AM – 10:30 AM',
-       tasks:['Have a nutritious breakfast','Fresh up','Rest & recharge']},
-      {id:'dsa1',color:COLORS.dsa,tag:'DSA Block 1',tagColor:'#ede9fe',tagText:'#5b21b6',
-       title:'DSA — Learn & Solve',time:'10:30 AM – 1:00 PM',
-       tasks:['Study concept (no distractions)','Solve problem 1','Solve problem 2','Solve problem 3','Review & note patterns']},
-      {id:'lunch',color:COLORS.break,tag:'Break',tagColor:'#f3f4f6',tagText:'#374151',
-       title:'Lunch + Relax',time:'1:00 PM – 2:00 PM',
-       tasks:['Have lunch','Take a proper break','No screen time']},
-      {id:'aiml',color:COLORS.aiml,tag:'AI/ML',tagColor:'#e0f2fe',tagText:'#0c4a6e',
-       title:'AI/ML Project Work',time:'2:00 PM – 4:00 PM',
-       tasks:['Review previous progress','Follow weekly plan','Write/run code','Document changes']},
-      {id:'corecs',color:COLORS.corecs,tag:'Core CS',tagColor:'#fef3c7',tagText:'#78350f',
-       title:`Core CS — ${cs}`,time:'4:00 PM – 5:00 PM',
-       tasks:[`Study ${cs} concepts`,`Revise ${cs} notes`,`Practice ${cs} questions`]},
-      {id:'dsa2',color:COLORS.dsa,tag:'DSA Block 2',tagColor:'#ede9fe',tagText:'#5b21b6',
-       title:'DSA — Practice Only',time:'5:00 PM – 6:00 PM',
-       tasks:['No videos — solve problems','Problem 1','Problem 2','Review solutions']},
-      {id:'games',color:COLORS.games,tag:'Fun',tagColor:'#dcfce7',tagText:'#14532d',
-       title:'Games with Friends',time:'6:00 PM – 7:30 PM',
-       tasks:['Play guilt-free!','Enjoy & recharge']},
-      {id:'dinner',color:COLORS.break,tag:'Break',tagColor:'#f3f4f6',tagText:'#374151',
-       title:'Dinner',time:'7:30 PM – 8:30 PM',
-       tasks:['Dinner','Wind down']},
-      {id:'placement',color:COLORS.placement,tag:'Placement',tagColor:'#fee2e2',tagText:'#7f1d1d',
-       title:'Placement Block',time:'8:30 PM – 10:30 PM',
-       tasks: placementType.includes('Day A')
-         ? ['LeetCode Contest','Solve medium problems','Review editorial']
-         : placementType.includes('Day B')
-         ? ['Continue project development','Push to GitHub','Update README']
-         : ['Update resume','Push clean code to GitHub','Polish LinkedIn/portfolio']},
-    ];
-  }
-
-  function dateKey(d) { return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`; }
-
-  function getDayIndex(d) {
-    return Math.floor((d - new Date(2025,0,1)) / 86400000);
-  }
-
-  function loadState() { try { return JSON.parse(localStorage.getItem('grind_state')||'{}'); } catch { return {}; } }
-  function saveState(s) { try { localStorage.setItem('grind_state', JSON.stringify(s)); } catch {} }
-
-  let state = loadState();
-  let selectedDate = new Date();
-  const todayDate = new Date();
-
-  function renderCalendar() {
-    const strip = document.getElementById('calendar-strip');
-    strip.innerHTML = '';
-    for (let i = -3; i <= 6; i++) {
-      const d = new Date(todayDate);
-      d.setDate(todayDate.getDate() + i);
-      const key = dateKey(d);
-      const dayState = state[key] || {};
-      const schedule = getSchedule(d.getDay(), getDayIndex(d));
-      const total = schedule.length;
-      const done = schedule.filter(b => dayState[b.id] === true).length;
-      const ratio = done / total;
-      const dotsCount = 5;
-      const dotsHtml = Array.from({length:dotsCount},(_,idx)=>
-        `<div class="dot ${idx < Math.round(ratio*dotsCount) ? 'done':''}"></div>`
-      ).join('');
-      const pill = document.createElement('div');
-      pill.className = 'day-pill' + (dateKey(d)===dateKey(selectedDate)?' active':'');
-      pill.innerHTML = `<div class="day-name">${DAYS[d.getDay()]}</div><div class="day-num">${d.getDate()}</div><div class="progress-dots">${dotsHtml}</div>`;
-      pill.onclick = () => { selectedDate = d; render(); };
-      strip.appendChild(pill);
-      if (dateKey(d)===dateKey(selectedDate)) {
-        setTimeout(() => pill.scrollIntoView({block:'nearest',inline:'center',behavior:'smooth'}),50);
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>My Daily Grind</title>
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css"
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
       }
-    }
-  }
 
-  function renderSchedule() {
-    const key = dateKey(selectedDate);
-    const dayState = state[key] || {};
-    const schedule = getSchedule(selectedDate.getDay(), getDayIndex(selectedDate));
-    const list = document.getElementById('schedule-list');
-    list.innerHTML = '';
+      :root {
+        --accent: #4f46e5;
+        --accent-light: #eef2ff;
+        --accent-mid: #818cf8;
+        --bg: #ffffff;
+        --bg2: #f9fafb;
+        --border: rgba(0, 0, 0, 0.12);
+        --text: #111827;
+        --muted: #6b7280;
+        --radius: 12px;
+      }
 
-    document.getElementById('date-label').textContent =
-      `${DAYS[selectedDate.getDay()]}, ${selectedDate.getDate()} ${MONTHS[selectedDate.getMonth()]}`;
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #1a1a2e;
+          --bg2: #16213e;
+          --border: rgba(255, 255, 255, 0.12);
+          --text: #f1f5f9;
+          --muted: #94a3b8;
+          --accent-light: #1e1b4b;
+        }
+      }
 
-    schedule.forEach(block => {
-      const blockDone = dayState[block.id] === true;
-      const taskStates = dayState[`${block.id}_tasks`] || {};
-      const taskItems = block.tasks.map((t,i) => {
-        const td = taskStates[i] === true;
-        return `<div class="task-item ${td?'done-task':''}" onclick="toggleTask('${key}','${block.id}',${i})">
-          <div class="task-cb">${td?'<i class="ti ti-check" aria-hidden="true"></i>':''}</div>${t}</div>`;
-      }).join('');
-      const div = document.createElement('div');
-      div.className = 'block' + (blockDone?' completed':'');
-      div.innerHTML = `
+      body {
+        font-family: "Syne", sans-serif;
+        color: var(--text);
+        background: var(--bg2);
+        min-height: 100vh;
+      }
+
+      .app {
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 0 0 3rem;
+      }
+
+      .header {
+        padding: 1.75rem 1.5rem 0;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 1rem;
+      }
+
+      .header h1 {
+        font-size: 26px;
+        font-weight: 800;
+        letter-spacing: -0.5px;
+      }
+      .header h1 span {
+        color: var(--accent);
+      }
+
+      .streak-badge {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        background: var(--accent-light);
+        color: var(--accent);
+        padding: 7px 16px;
+        border-radius: 100px;
+        font-size: 13px;
+        font-weight: 600;
+        border: 0.5px solid var(--accent-mid);
+      }
+
+      .calendar-strip {
+        display: flex;
+        gap: 8px;
+        padding: 1.25rem 1.5rem;
+        overflow-x: auto;
+        scrollbar-width: none;
+      }
+      .calendar-strip::-webkit-scrollbar {
+        display: none;
+      }
+
+      .day-pill {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+        padding: 10px 14px;
+        border-radius: 12px;
+        cursor: pointer;
+        border: 0.5px solid var(--border);
+        background: var(--bg);
+        min-width: 60px;
+        transition: all 0.15s;
+      }
+      .day-pill:hover {
+        border-color: var(--accent-mid);
+      }
+      .day-pill.active {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: white;
+      }
+      .day-pill .day-name {
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        opacity: 0.7;
+      }
+      .day-pill.active .day-name {
+        opacity: 1;
+      }
+      .day-pill .day-num {
+        font-size: 18px;
+        font-weight: 800;
+      }
+      .day-pill .progress-dots {
+        display: flex;
+        gap: 3px;
+        margin-top: 2px;
+      }
+      .dot {
+        width: 5px;
+        height: 5px;
+        border-radius: 50%;
+        background: var(--border);
+      }
+      .dot.done {
+        background: #4ade80;
+      }
+      .day-pill.active .dot {
+        background: rgba(255, 255, 255, 0.3);
+      }
+      .day-pill.active .dot.done {
+        background: rgba(255, 255, 255, 0.95);
+      }
+
+      .today-label {
+        font-size: 12px;
+        font-weight: 700;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        padding: 0 1.5rem;
+        margin-bottom: 0.75rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+
+      .reset-btn {
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--accent);
+        cursor: pointer;
+        background: none;
+        border: 0.5px solid var(--accent-mid);
+        border-radius: 100px;
+        padding: 4px 12px;
+        font-family: inherit;
+        transition: background 0.15s;
+      }
+      .reset-btn:hover {
+        background: var(--accent-light);
+      }
+
+      .main {
+        padding: 0 1.5rem 2rem;
+        display: grid;
+        grid-template-columns: 1fr 300px;
+        gap: 1.5rem;
+      }
+
+      @media (max-width: 700px) {
+        .main {
+          grid-template-columns: 1fr;
+        }
+        .sidebar {
+          display: none;
+        }
+      }
+
+      .schedule-list {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+
+      .block {
+        border: 0.5px solid var(--border);
+        border-radius: var(--radius);
+        background: var(--bg);
+        overflow: hidden;
+        transition: border-color 0.15s;
+      }
+      .block.completed {
+        opacity: 0.7;
+      }
+      .block.completed .block-header {
+        background: var(--bg2);
+      }
+
+      .block-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 16px;
+        cursor: pointer;
+        user-select: none;
+      }
+
+      .color-bar {
+        width: 4px;
+        height: 36px;
+        border-radius: 2px;
+        flex-shrink: 0;
+      }
+
+      .block-info {
+        flex: 1;
+      }
+
+      .block-title {
+        font-size: 15px;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+
+      .block-time {
+        font-size: 12px;
+        color: var(--muted);
+        margin-top: 2px;
+        font-family: "Space Mono", monospace;
+      }
+
+      .tag {
+        font-size: 10px;
+        font-weight: 700;
+        padding: 2px 8px;
+        border-radius: 100px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      .check-btn {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        border: 0.5px solid var(--border);
+        background: var(--bg2);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        transition: all 0.15s;
+        color: var(--muted);
+        font-size: 16px;
+      }
+      .check-btn:hover {
+        border-color: #4ade80;
+        color: #16a34a;
+      }
+      .check-btn.done {
+        background: #dcfce7;
+        border-color: #4ade80;
+        color: #16a34a;
+      }
+
+      .block-tasks {
+        border-top: 0.5px solid var(--border);
+        padding: 10px 16px 12px 48px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .task-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 13px;
+        cursor: pointer;
+        padding: 4px 0;
+        color: var(--text);
+        transition: color 0.15s;
+      }
+      .task-item.done-task {
+        color: var(--muted);
+        text-decoration: line-through;
+      }
+
+      .task-cb {
+        width: 16px;
+        height: 16px;
+        border-radius: 4px;
+        border: 0.5px solid var(--border);
+        background: var(--bg2);
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.15s;
+        font-size: 10px;
+        color: transparent;
+      }
+      .task-item.done-task .task-cb {
+        background: #dcfce7;
+        border-color: #4ade80;
+        color: #16a34a;
+      }
+
+      /* Sidebar */
+      .sidebar {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      .stat-card {
+        background: var(--bg);
+        border: 0.5px solid var(--border);
+        border-radius: var(--radius);
+        padding: 1rem 1.25rem;
+      }
+
+      .stat-label {
+        font-size: 12px;
+        color: var(--muted);
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 6px;
+      }
+
+      .progress-bar-outer {
+        height: 8px;
+        border-radius: 4px;
+        background: var(--border);
+        overflow: hidden;
+        margin-top: 8px;
+      }
+
+      .progress-bar-inner {
+        height: 100%;
+        border-radius: 4px;
+        background: var(--accent);
+        transition: width 0.4s ease;
+      }
+
+      .big-num {
+        font-size: 32px;
+        font-weight: 800;
+        color: var(--accent);
+      }
+
+      .legend-list {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-top: 8px;
+      }
+      .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 13px;
+      }
+      .legend-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        flex-shrink: 0;
+      }
+
+      .motivation-card {
+        background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+        border-radius: var(--radius);
+        padding: 1.25rem;
+        color: white;
+      }
+      .motivation-card p {
+        font-size: 14px;
+        line-height: 1.6;
+        opacity: 0.9;
+      }
+      .motivation-card strong {
+        display: block;
+        font-size: 16px;
+        font-weight: 800;
+        margin-bottom: 6px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app">
+      <div class="header">
+        <h1>My <span>Daily Grind</span></h1>
+        <div class="streak-badge" id="streak-badge">
+          <i class="ti ti-flame" aria-hidden="true"></i>
+          <span id="streak-text">0 day streak</span>
+        </div>
+      </div>
+
+      <div class="calendar-strip" id="calendar-strip"></div>
+
+      <div class="today-label">
+        <span id="date-label">Today's schedule</span>
+        <button class="reset-btn" onclick="resetDay()">Reset day</button>
+      </div>
+
+      <div class="main">
+        <div class="schedule-list" id="schedule-list"></div>
+        <div class="sidebar">
+          <div class="stat-card">
+            <div class="stat-label">Today's progress</div>
+            <div class="big-num" id="pct-num">0%</div>
+            <div class="progress-bar-outer">
+              <div
+                class="progress-bar-inner"
+                id="progress-bar"
+                style="width: 0%"
+              ></div>
+            </div>
+            <div
+              style="font-size: 12px; color: var(--muted); margin-top: 6px"
+              id="tasks-done-label"
+            >
+              0 of 0 blocks done
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-label">Core CS today</div>
+            <div
+              style="margin-top: 8px; font-size: 15px; font-weight: 700"
+              id="cs-today"
+            ></div>
+            <div style="font-size: 12px; color: var(--muted); margin-top: 4px">
+              4:00–5:00 PM slot
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-label">Placement block</div>
+            <div
+              style="margin-top: 8px; font-size: 15px; font-weight: 700"
+              id="placement-today"
+            ></div>
+            <div style="font-size: 12px; color: var(--muted); margin-top: 4px">
+              8:30–10:30 PM slot
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-label">DSA topics</div>
+            <div id="dsa-progress" class="legend-list"></div>
+          </div>
+
+          <div class="motivation-card">
+            <strong id="quote-title">Keep going!</strong>
+            <p id="quote-text">
+              Every expert was once a beginner. Today's grind is tomorrow's
+              interview win.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+      const MONTHS = [
+        "Jan",
+        "Feb",
+        "Mar",
+        "Apr",
+        "May",
+        "Jun",
+        "Jul",
+        "Aug",
+        "Sep",
+        "Oct",
+        "Nov",
+        "Dec",
+      ];
+      const CS_ROTATION = {
+        0: "Revision",
+        1: "OOP",
+        2: "DBMS",
+        3: "OS",
+        4: "CN",
+        5: "OOP",
+        6: "DBMS",
+      };
+      const PLACEMENT_ROTATION = {
+        0: "Day A: LeetCode + Medium",
+        1: "Day B: Project Dev",
+        2: "Day C: Resume & GitHub",
+      };
+      const DSA_ORDER = ["Trees", "BST", "Heap", "Graph", "DP"];
+      const DSA_COLORS = [
+        "#7c3aed",
+        "#8b5cf6",
+        "#a78bfa",
+        "#c4b5fd",
+        "#ddd6fe",
+      ];
+
+      const QUOTES = [
+        {
+          title: "Lock in.",
+          text: "No distractions. The placement season rewards those who stayed consistent.",
+        },
+        {
+          title: "One block at a time.",
+          text: "You don't need to do everything today. Just the next task.",
+        },
+        {
+          title: "Cricket → Code → Conquer.",
+          text: "Balance is the key. You've got a solid plan — execute it.",
+        },
+        {
+          title: "DSA is a skill.",
+          text: "Solve one problem at a time. Consistency beats intensity.",
+        },
+        {
+          title: "You're building something.",
+          text: "Each day's work compounds. Keep showing up.",
+        },
+      ];
+
+      const COLORS = {
+        cricket: "#059669",
+        dsa: "#7c3aed",
+        aiml: "#0891b2",
+        corecs: "#d97706",
+        placement: "#dc2626",
+        break: "#9ca3af",
+        games: "#16a34a",
+      };
+
+      function getSchedule(dayOfWeek, dayIndex) {
+        const cs = CS_ROTATION[dayOfWeek];
+        const placementType = PLACEMENT_ROTATION[dayIndex % 3];
+        return [
+          {
+            id: "cricket",
+            color: COLORS.cricket,
+            tag: "Sport",
+            tagColor: "#d1fae5",
+            tagText: "#065f46",
+            title: "Cricket Practice",
+            time: "6:00 AM – 9:30 AM",
+            tasks: [
+              "Batting drills",
+              "Fielding practice",
+              "Team play",
+              "Cool down & stretch",
+            ],
+          },
+          {
+            id: "break1",
+            color: COLORS.break,
+            tag: "Break",
+            tagColor: "#f3f4f6",
+            tagText: "#374151",
+            title: "Breakfast + Bath + Rest",
+            time: "9:30 AM – 10:30 AM",
+            tasks: [
+              "Have a nutritious breakfast",
+              "Fresh up",
+              "Rest & recharge",
+            ],
+          },
+          {
+            id: "dsa1",
+            color: COLORS.dsa,
+            tag: "DSA Block 1",
+            tagColor: "#ede9fe",
+            tagText: "#5b21b6",
+            title: "DSA — Learn & Solve",
+            time: "10:30 AM – 1:00 PM",
+            tasks: [
+              "Study concept (no distractions)",
+              "Solve problem 1",
+              "Solve problem 2",
+              "Solve problem 3",
+              "Review & note patterns",
+            ],
+          },
+          {
+            id: "lunch",
+            color: COLORS.break,
+            tag: "Break",
+            tagColor: "#f3f4f6",
+            tagText: "#374151",
+            title: "Lunch + Relax",
+            time: "1:00 PM – 2:00 PM",
+            tasks: ["Have lunch", "Take a proper break", "No screen time"],
+          },
+          {
+            id: "aiml",
+            color: COLORS.aiml,
+            tag: "AI/ML",
+            tagColor: "#e0f2fe",
+            tagText: "#0c4a6e",
+            title: "AI/ML Project Work",
+            time: "2:00 PM – 4:00 PM",
+            tasks: [
+              "Review previous progress",
+              "Follow weekly plan",
+              "Write/run code",
+              "Document changes",
+            ],
+          },
+          {
+            id: "corecs",
+            color: COLORS.corecs,
+            tag: "Core CS",
+            tagColor: "#fef3c7",
+            tagText: "#78350f",
+            title: `Core CS — ${cs}`,
+            time: "4:00 PM – 5:00 PM",
+            tasks: [
+              `Study ${cs} concepts`,
+              `Revise ${cs} notes`,
+              `Practice ${cs} questions`,
+            ],
+          },
+          {
+            id: "dsa2",
+            color: COLORS.dsa,
+            tag: "DSA Block 2",
+            tagColor: "#ede9fe",
+            tagText: "#5b21b6",
+            title: "DSA — Practice Only",
+            time: "5:00 PM – 6:00 PM",
+            tasks: [
+              "No videos — solve problems",
+              "Problem 1",
+              "Problem 2",
+              "Review solutions",
+            ],
+          },
+          {
+            id: "games",
+            color: COLORS.games,
+            tag: "Fun",
+            tagColor: "#dcfce7",
+            tagText: "#14532d",
+            title: "Games with Friends",
+            time: "6:00 PM – 7:30 PM",
+            tasks: ["Play guilt-free!", "Enjoy & recharge"],
+          },
+          {
+            id: "dinner",
+            color: COLORS.break,
+            tag: "Break",
+            tagColor: "#f3f4f6",
+            tagText: "#374151",
+            title: "Dinner",
+            time: "7:30 PM – 8:30 PM",
+            tasks: ["Dinner", "Wind down"],
+          },
+          {
+            id: "placement",
+            color: COLORS.placement,
+            tag: "Placement",
+            tagColor: "#fee2e2",
+            tagText: "#7f1d1d",
+            title: "Placement Block",
+            time: "8:30 PM – 10:30 PM",
+            tasks: placementType.includes("Day A")
+              ? [
+                  "LeetCode Contest",
+                  "Solve medium problems",
+                  "Review editorial",
+                ]
+              : placementType.includes("Day B")
+                ? [
+                    "Continue project development",
+                    "Push to GitHub",
+                    "Update README",
+                  ]
+                : [
+                    "Update resume",
+                    "Push clean code to GitHub",
+                    "Polish LinkedIn/portfolio",
+                  ],
+          },
+        ];
+      }
+
+      function dateKey(d) {
+        return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+      }
+
+      function getDayIndex(d) {
+        return Math.floor((d - new Date(2025, 0, 1)) / 86400000);
+      }
+
+      function loadState() {
+        try {
+          return JSON.parse(localStorage.getItem("grind_state") || "{}");
+        } catch {
+          return {};
+        }
+      }
+      function saveState(s) {
+        try {
+          localStorage.setItem("grind_state", JSON.stringify(s));
+        } catch {}
+      }
+
+      let state = loadState();
+      let selectedDate = new Date();
+      const todayDate = new Date();
+
+      function renderCalendar() {
+        const strip = document.getElementById("calendar-strip");
+        strip.innerHTML = "";
+        let endDate = new Date(todayDate.getFullYear(), 6, 31);
+        if (todayDate > endDate) {
+          endDate = new Date(
+            todayDate.getFullYear(),
+            todayDate.getMonth() + 1,
+            0,
+          );
+        }
+        const startDate = new Date(todayDate);
+        startDate.setDate(todayDate.getDate() - 3);
+        let d = new Date(startDate);
+        while (d <= endDate) {
+          const key = dateKey(d);
+          const dayState = state[key] || {};
+          const schedule = getSchedule(d.getDay(), getDayIndex(d));
+          const total = schedule.length;
+          const done = schedule.filter((b) => dayState[b.id] === true).length;
+          const ratio = total > 0 ? done / total : 0;
+          const dotsCount = 5;
+          const dotsHtml = Array.from(
+            { length: dotsCount },
+            (_, idx) =>
+              `<div class="dot ${idx < Math.round(ratio * dotsCount) ? "done" : ""}"></div>`,
+          ).join("");
+          const isMonthStart = d.getDate() === 1;
+          const pill = document.createElement("div");
+          pill.className =
+            "day-pill" +
+            (dateKey(d) === dateKey(selectedDate) ? " active" : "");
+          pill.innerHTML =
+            `<div class="day-name">${DAYS[d.getDay()]}</div>` +
+            `<div class="day-num">${d.getDate()}</div>` +
+            `${isMonthStart ? `<div class="month-label">${MONTHS[d.getMonth()]}</div>` : ""}` +
+            `<div class="progress-dots">${dotsHtml}</div>`;
+          pill.onclick = () => {
+            selectedDate = new Date(d);
+            render();
+          };
+          strip.appendChild(pill);
+          if (dateKey(d) === dateKey(selectedDate)) {
+            setTimeout(
+              () =>
+                pill.scrollIntoView({
+                  block: "nearest",
+                  inline: "center",
+                  behavior: "smooth",
+                }),
+              50,
+            );
+          }
+          d.setDate(d.getDate() + 1);
+        }
+      }
+
+      function renderSchedule() {
+        const key = dateKey(selectedDate);
+        const dayState = state[key] || {};
+        const schedule = getSchedule(
+          selectedDate.getDay(),
+          getDayIndex(selectedDate),
+        );
+        const list = document.getElementById("schedule-list");
+        list.innerHTML = "";
+
+        document.getElementById("date-label").textContent =
+          `${DAYS[selectedDate.getDay()]}, ${selectedDate.getDate()} ${MONTHS[selectedDate.getMonth()]}`;
+
+        schedule.forEach((block) => {
+          const blockDone = dayState[block.id] === true;
+          const taskStates = dayState[`${block.id}_tasks`] || {};
+          const taskItems = block.tasks
+            .map((t, i) => {
+              const td = taskStates[i] === true;
+              return `<div class="task-item ${td ? "done-task" : ""}" onclick="toggleTask('${key}','${block.id}',${i})">
+          <div class="task-cb">${td ? '<i class="ti ti-check" aria-hidden="true"></i>' : ""}</div>${t}</div>`;
+            })
+            .join("");
+          const div = document.createElement("div");
+          div.className = "block" + (blockDone ? " completed" : "");
+          div.innerHTML = `
         <div class="block-header" onclick="toggleBlock('${key}','${block.id}')">
           <div class="color-bar" style="background:${block.color}"></div>
           <div class="block-info">
@@ -478,77 +832,101 @@
             </div>
             <div class="block-time">${block.time}</div>
           </div>
-          <div class="check-btn ${blockDone?'done':''}" aria-label="${blockDone?'Completed':'Mark complete'}">
-            <i class="ti ${blockDone?'ti-check':'ti-circle'}" aria-hidden="true"></i>
+          <div class="check-btn ${blockDone ? "done" : ""}" aria-label="${blockDone ? "Completed" : "Mark complete"}">
+            <i class="ti ${blockDone ? "ti-check" : "ti-circle"}" aria-hidden="true"></i>
           </div>
         </div>
         <div class="block-tasks">${taskItems}</div>`;
-      list.appendChild(div);
-    });
+          list.appendChild(div);
+        });
 
-    const total = schedule.length;
-    const done = schedule.filter(b => dayState[b.id] === true).length;
-    const pct = total > 0 ? Math.round((done/total)*100) : 0;
-    document.getElementById('pct-num').textContent = pct + '%';
-    document.getElementById('progress-bar').style.width = pct + '%';
-    document.getElementById('tasks-done-label').textContent = `${done} of ${total} blocks done`;
-    document.getElementById('cs-today').textContent = CS_ROTATION[selectedDate.getDay()];
-    document.getElementById('placement-today').textContent = PLACEMENT_ROTATION[getDayIndex(selectedDate)%3].replace(/Day [ABC]: /,'');
+        const total = schedule.length;
+        const done = schedule.filter((b) => dayState[b.id] === true).length;
+        const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+        document.getElementById("pct-num").textContent = pct + "%";
+        document.getElementById("progress-bar").style.width = pct + "%";
+        document.getElementById("tasks-done-label").textContent =
+          `${done} of ${total} blocks done`;
+        document.getElementById("cs-today").textContent =
+          CS_ROTATION[selectedDate.getDay()];
+        document.getElementById("placement-today").textContent =
+          PLACEMENT_ROTATION[getDayIndex(selectedDate) % 3].replace(
+            /Day [ABC]: /,
+            "",
+          );
 
-    const q = QUOTES[getDayIndex(selectedDate) % QUOTES.length];
-    document.getElementById('quote-title').textContent = q.title;
-    document.getElementById('quote-text').textContent = q.text;
+        const q = QUOTES[getDayIndex(selectedDate) % QUOTES.length];
+        document.getElementById("quote-title").textContent = q.title;
+        document.getElementById("quote-text").textContent = q.text;
 
-    document.getElementById('dsa-progress').innerHTML = DSA_ORDER.map((topic,i)=>`
+        document.getElementById("dsa-progress").innerHTML = DSA_ORDER.map(
+          (topic, i) => `
       <div class="legend-item">
         <div class="legend-dot" style="background:${DSA_COLORS[i]}"></div>
-        <span>${i+1}. ${topic}</span>
-      </div>`).join('');
+        <span>${i + 1}. ${topic}</span>
+      </div>`,
+        ).join("");
 
-    updateStreak();
-  }
+        updateStreak();
+      }
 
-  function toggleBlock(key, blockId) {
-    if (!state[key]) state[key] = {};
-    state[key][blockId] = !state[key][blockId];
-    saveState(state); render();
-  }
+      function toggleBlock(key, blockId) {
+        if (!state[key]) state[key] = {};
+        state[key][blockId] = !state[key][blockId];
+        saveState(state);
+        render();
+      }
 
-  function toggleTask(key, blockId, taskIdx) {
-    if (!state[key]) state[key] = {};
-    if (!state[key][`${blockId}_tasks`]) state[key][`${blockId}_tasks`] = {};
-    state[key][`${blockId}_tasks`][taskIdx] = !state[key][`${blockId}_tasks`][taskIdx];
-    const schedule = getSchedule(selectedDate.getDay(), getDayIndex(selectedDate));
-    const block = schedule.find(b => b.id === blockId);
-    if (block) {
-      const allDone = block.tasks.every((_,i) => state[key][`${blockId}_tasks`][i] === true);
-      if (allDone) state[key][blockId] = true;
-    }
-    saveState(state); render();
-  }
+      function toggleTask(key, blockId, taskIdx) {
+        if (!state[key]) state[key] = {};
+        if (!state[key][`${blockId}_tasks`])
+          state[key][`${blockId}_tasks`] = {};
+        state[key][`${blockId}_tasks`][taskIdx] =
+          !state[key][`${blockId}_tasks`][taskIdx];
+        const schedule = getSchedule(
+          selectedDate.getDay(),
+          getDayIndex(selectedDate),
+        );
+        const block = schedule.find((b) => b.id === blockId);
+        if (block) {
+          const allDone = block.tasks.every(
+            (_, i) => state[key][`${blockId}_tasks`][i] === true,
+          );
+          if (allDone) state[key][blockId] = true;
+        }
+        saveState(state);
+        render();
+      }
 
-  function resetDay() {
-    const key = dateKey(selectedDate);
-    delete state[key];
-    saveState(state); render();
-  }
+      function resetDay() {
+        const key = dateKey(selectedDate);
+        delete state[key];
+        saveState(state);
+        render();
+      }
 
-  function updateStreak() {
-    let streak = 0;
-    const d = new Date(todayDate);
-    while (true) {
-      const key = dateKey(d);
-      const dayState = state[key] || {};
-      const schedule = getSchedule(d.getDay(), getDayIndex(d));
-      const done = schedule.filter(b => dayState[b.id] === true).length;
-      if (schedule.length > 0 && done/schedule.length >= 0.8) { streak++; d.setDate(d.getDate()-1); }
-      else break;
-    }
-    document.getElementById('streak-text').textContent = `${streak} day streak`;
-  }
+      function updateStreak() {
+        let streak = 0;
+        const d = new Date(todayDate);
+        while (true) {
+          const key = dateKey(d);
+          const dayState = state[key] || {};
+          const schedule = getSchedule(d.getDay(), getDayIndex(d));
+          const done = schedule.filter((b) => dayState[b.id] === true).length;
+          if (schedule.length > 0 && done / schedule.length >= 0.8) {
+            streak++;
+            d.setDate(d.getDate() - 1);
+          } else break;
+        }
+        document.getElementById("streak-text").textContent =
+          `${streak} day streak`;
+      }
 
-  function render() { renderCalendar(); renderSchedule(); }
-  render();
-</script>
-</body>
+      function render() {
+        renderCalendar();
+        renderSchedule();
+      }
+      render();
+    </script>
+  </body>
 </html>
