@@ -1,0 +1,3 @@
+{
+  "rewrites": [{ "source": "/", "destination": "/daily_grind_tracker.html" }]
+}
